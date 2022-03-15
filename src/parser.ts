@@ -130,7 +130,6 @@ const scenarioNameCounts = (scenarios: ScenarioStop[]) => {
     const startTime = await chooseStartTime(scenarios);
 
     const timeMatchScenarios = scenarios.filter(scenario => scenario.timestamp >= startTime);
-    console.log(scenarioNameCounts(scenarios));
     const nameMatchScenarios = timeMatchScenarios.filter(scenario =>scenariosOfInterest.includes(scenario.scenarioName));
     nameMatchScenarios
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
