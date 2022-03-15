@@ -61,25 +61,16 @@ const parseScenarios = (lines: string[]) => {
     lines.forEach(line => {
         const [dateMatch, afterDate] = maybeParseDate(line);
         if (!dateMatch) {
-            if (line.includes("hybrid_entity_teams_grid_load")) {
-                console.log(`no date (${dateMatch}) (${line.charCodeAt(0)}): ${line}`);
-            }
             return;
         }
 
         const [logLevel, afterLogLevel] = maybeParseLogLevel(afterDate);
         if (!logLevel) {
-            if (line.includes("hybrid_entity_teams_grid_load")) {
-                console.log(`no log level: ${afterDate}`);
-            }
             return;
         }
 
         const scenarioInfo = maybeParseScenarioInfo(afterLogLevel);
         if (!scenarioInfo) {
-            if (line.includes("hybrid_entity_teams_grid_load")) {
-                console.log(`no scenario info: ${afterLogLevel}`);
-            }
             return;
         }
 
@@ -139,7 +130,6 @@ const scenarioNameCounts = (scenarios: ScenarioStop[]) => {
     const startTime = await chooseStartTime(scenarios);
 
     const timeMatchScenarios = scenarios.filter(scenario => scenario.timestamp >= startTime);
-    console.log(`Found ${timeMatchScenarios.length} after ${startTime}`);
     console.log(scenarioNameCounts(scenarios));
     const nameMatchScenarios = timeMatchScenarios.filter(scenario =>scenariosOfInterest.includes(scenario.scenarioName));
     nameMatchScenarios
