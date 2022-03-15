@@ -5,7 +5,7 @@ import { promises } from "fs";
 const getLines = async (filename: string) => {
     const inputFile = await promises.readFile(filename);
     const inputFileString = inputFile.toString();
-    return inputFileString.split("\n");
+    return inputFileString.split("\n").map(line => line.trim());
 };
 
 type ScenarioStop = {
@@ -14,7 +14,7 @@ type ScenarioStop = {
     scenarioTimeMs: number;
 }
 
-const dateRegex = new RegExp(/^(20[0-9]{2})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{3})Z (.*)/gm);
+const dateRegex = new RegExp(/^(20[0-9]{2})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\.([0-9]{3})Z (.*)/);
 
 const maybeParseDate = (line: string): [Date | undefined, string] => {
     const timestampMatch = dateRegex.exec(line);
@@ -34,14 +34,13 @@ const maybeParseDate = (line: string): [Date | undefined, string] => {
 }
 
 type LogLevel = "War" | "Inf" | "Err";
-const logLevelRegex = new RegExp(/^(\w+)(?:\s+)(.*)/gm);
 
 const maybeParseLogLevel = (line: string): [LogLevel | undefined, string] => {
     const tokens = line.split(/\s+/);
     return [tokens[0] as any, tokens.slice(1).join(" ")];
 };
 
-const scenarioInfoRegex = new RegExp(/\[Scenario\](\w+) \[step\]\(([0-9]+)\)stop \((?:[0-9]+ms\/)?([0-9]+)ms\)/gm);
+const scenarioInfoRegex = new RegExp(/\[Scenario\](\w+) \[step\]\(([0-9]+)\)stop \((?:-?[0-9]+ms\/)?([0-9]+)ms\)/);
 
 const maybeParseScenarioInfo = (line: string): Pick<ScenarioStop, 'scenarioName' | 'scenarioTimeMs'> | undefined => {
     const scenarioInfoMatch = scenarioInfoRegex.exec(line);
@@ -62,16 +61,25 @@ const parseScenarios = (lines: string[]) => {
     lines.forEach(line => {
         const [dateMatch, afterDate] = maybeParseDate(line);
         if (!dateMatch) {
+            if (line.includes("hybrid_entity_teams_grid_load")) {
+                console.log(`no date (${dateMatch}) (${line.charCodeAt(0)}): ${line}`);
+            }
             return;
         }
 
         const [logLevel, afterLogLevel] = maybeParseLogLevel(afterDate);
         if (!logLevel) {
+            if (line.includes("hybrid_entity_teams_grid_load")) {
+                console.log(`no log level: ${afterDate}`);
+            }
             return;
         }
 
         const scenarioInfo = maybeParseScenarioInfo(afterLogLevel);
         if (!scenarioInfo) {
+            if (line.includes("hybrid_entity_teams_grid_load")) {
+                console.log(`no scenario info: ${afterLogLevel}`);
+            }
             return;
         }
 
@@ -110,6 +118,18 @@ const chooseStartTime = async (scenarios: ScenarioStop[]) => {
 
 };
 
+const scenarioNameCounts = (scenarios: ScenarioStop[]) => {
+    const results: Record<string, number> = {};
+    scenarios.forEach(scenario => {
+        if (results[scenario.scenarioName]) {
+            results[scenario.scenarioName]++;
+        } else {
+            results[scenario.scenarioName] = 1;
+        }
+    });
+    return results;
+}
+
 (async () => {
     const inputFileName = process.argv[2];
     const scenariosOfInterest = process.argv[3].split(",");
@@ -119,6 +139,8 @@ const chooseStartTime = async (scenarios: ScenarioStop[]) => {
     const startTime = await chooseStartTime(scenarios);
 
     const timeMatchScenarios = scenarios.filter(scenario => scenario.timestamp >= startTime);
+    console.log(`Found ${timeMatchScenarios.length} after ${startTime}`);
+    console.log(scenarioNameCounts(scenarios));
     const nameMatchScenarios = timeMatchScenarios.filter(scenario =>scenariosOfInterest.includes(scenario.scenarioName));
     nameMatchScenarios
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
