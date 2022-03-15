@@ -5,7 +5,8 @@
   "author": "Carter Butaud (cabutaud@microsoft.com)",
   "license": "UNLICENSED",
   "scripts": {
-    "start": "tsc && node ./dist/parser.js"
+    "start": "tsc && node ./dist/parser.js",
+    "compare": "tsc && node ./dist/result-comparer.js"
   },
   "devDependencies": {
     "@types/node": "^17.0.21",
