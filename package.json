@@ -6,7 +6,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "start": "tsc && node ./dist/parser.js",
-    "compare": "tsc && node ./dist/result-comparer.js"
+    "compare": "tsc && node ./dist/result-comparer.js",
+    "combine": "tsc && node ./dist/combine.js"
   },
   "devDependencies": {
     "@types/node": "^17.0.21",
